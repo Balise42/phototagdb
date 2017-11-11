@@ -5,12 +5,22 @@ import (
 	"log"
 	"github.com/golang/protobuf/proto"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
-//	"fmt"
+	"fmt"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var (
+	db *sql.DB
+)
+
 func main() {
+	var err error
+	db, err = sql.Open("sqlite3", "../../resources/imgtag.db")
+	if err != nil {
+		log.Fatal("can't open db", err)
+	}
+
 	data, err := ioutil.ReadFile("/home/isa/tmp/protobuf")
 	if err != nil {
 		log.Fatal("can't read file", err)
@@ -31,17 +41,13 @@ func Store(filename string, data *pb.AnnotateImageResponse) {
 	if err != nil {
 		log.Fatal("can't marshal", err)
 	}
+	fmt.Println("raw")
 	StoreRaw(filename, raw)
+	fmt.Println("val")
 	StoreResponseValues(filename, data)
 }
 
 func StoreRaw(filename string, bytes []byte) {
-	db, err := sql.Open("sqlite3", "../../resources/imgtag.db")
-
-	if err != nil {
-		log.Fatal("can't open db", err)
-	}
-
 	stmt, err := db.Prepare("INSERT OR REPLACE INTO protobufs values(?, ?)");
 
 	if err != nil {
@@ -67,12 +73,6 @@ func storeLabels(filename string, data *pb.AnnotateImageResponse) {
 }
 
 func storeLabel(mid string, description string) {
-	db, err := sql.Open("sqlite3", "../../resources/imgtag.db")
-
-        if err != nil {
-                log.Fatal("can't open db", err)
-        }
-
         stmt, err := db.Prepare("INSERT OR IGNORE INTO labels values(?, ?)");
 
         if err != nil {
@@ -87,11 +87,6 @@ func storeLabel(mid string, description string) {
 }
 
 func storeImageLabel(filename string, label *pb.EntityAnnotation) {
-	db, err := sql.Open("sqlite3", "../../resources/imgtag.db")
-	if err != nil {
-                log.Fatal("can't open db", err)
-        }
-
         stmt, err := db.Prepare("INSERT OR REPLACE INTO imagelabels values(?, ?, ?)");
 
         if err != nil {
