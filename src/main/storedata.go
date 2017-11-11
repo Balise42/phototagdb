@@ -60,5 +60,48 @@ func StoreResponseValues(filename string, data *pb.AnnotateImageResponse) {
 }
 
 func storeLabels(filename string, data *pb.AnnotateImageResponse) {
+	for _, label := range(data.GetLabelAnnotations()) {
+		storeLabel(label.Mid, label.Description)
+		storeImageLabel(filename, label)
+	}
+}
+
+func storeLabel(mid string, description string) {
+	db, err := sql.Open("sqlite3", "../../resources/imgtag.db")
+
+        if err != nil {
+                log.Fatal("can't open db", err)
+        }
+
+        stmt, err := db.Prepare("INSERT OR IGNORE INTO labels values(?, ?)");
+
+        if err != nil {
+                log.Fatal("can't create statement", err)
+        }
+
+        _, err = stmt.Exec(mid, description)
+
+        if err != nil {
+                log.Fatal("can't insert", err)
+        }
+}
+
+func storeImageLabel(filename string, label *pb.EntityAnnotation) {
+	db, err := sql.Open("sqlite3", "../../resources/imgtag.db")
+	if err != nil {
+                log.Fatal("can't open db", err)
+        }
+
+        stmt, err := db.Prepare("INSERT OR REPLACE INTO imagelabels values(?, ?, ?)");
+
+        if err != nil {
+                log.Fatal("can't create statement", err)
+        }
+
+        _, err = stmt.Exec(filename, label.Mid, label.Score)
+
+        if err != nil {
+                log.Fatal("can't insert", err)
+        }
 }
 
