@@ -5,7 +5,7 @@ import (
 	"log"
 	"github.com/golang/protobuf/proto"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
-	"fmt"
+//	"fmt"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -15,23 +15,27 @@ func main() {
 	if err != nil {
 		log.Fatal("can't read file", err)
 	}
+
 	response := &pb.AnnotateImageResponse{}
+        err = proto.Unmarshal(data, response)
 
-	err = proto.Unmarshal(data, response)
+        if err != nil {
+                log.Fatal("can't unmarshall", err)
+        }
+	Store("plop", response)
 
-	if err != nil {
-		log.Fatal("can't unmarshall", err)
-	}
-	fmt.Println(response)
-	StoreRaw("plop", response)
 }
 
 func Store(filename string, data *pb.AnnotateImageResponse) {
-	bytes, err := proto.Marshal(data)
+	raw, err := proto.Marshal(data)
 	if err != nil {
-		log.Fatal("can't marshal data", err)
+		log.Fatal("can't marshal", err)
 	}
+	StoreRaw(filename, raw)
+	StoreResponseValues(filename, data)
+}
 
+func StoreRaw(filename string, bytes []byte) {
 	db, err := sql.Open("sqlite3", "../../resources/imgtag.db")
 
 	if err != nil {
@@ -50,3 +54,11 @@ func Store(filename string, data *pb.AnnotateImageResponse) {
 		log.Fatal("can't insert", err)
 	}
 }
+
+func StoreResponseValues(filename string, data *pb.AnnotateImageResponse) {
+	storeLabels(filename, data)
+}
+
+func storeLabels(filename string, data *pb.AnnotateImageResponse) {
+}
+
