@@ -67,12 +67,20 @@ func StoreRaw(filename string, bytes []byte, tx *sql.Tx) {
 
 func StoreResponseValues(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	storeLabels(filename, data, tx)
+	storeLandmarks(filename, data, tx)
 }
 
 func storeLabels(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	for _, label := range(data.GetLabelAnnotations()) {
 		storeLabel(label.Mid, label.Description, tx)
 		storeImageLabel(filename, label, tx)
+	}
+}
+
+func storeLandmarks(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
+	for _, landmark := range(data.GetLandmarkAnnotations()) {
+		storeLabel(landmark.Mid, landmark.Description, tx)
+		storeImageLabel(filename, landmark, tx)
 	}
 }
 
