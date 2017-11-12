@@ -47,7 +47,7 @@ var (
 	}
 )
 
-func main() {
+func test() {
 	data, err := ioutil.ReadFile("/home/isa/tmp/protobuf")
         if err != nil {
                 log.Fatal("can't read file", err)
