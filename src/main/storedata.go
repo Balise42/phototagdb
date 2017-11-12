@@ -5,7 +5,6 @@ import (
 	"log"
 	"github.com/golang/protobuf/proto"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
-	"fmt"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -41,61 +40,70 @@ func Store(filename string, data *pb.AnnotateImageResponse) {
 	if err != nil {
 		log.Fatal("can't marshal", err)
 	}
-	fmt.Println("raw")
-	StoreRaw(filename, raw)
-	fmt.Println("val")
-	StoreResponseValues(filename, data)
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal("can't start transaction", err)
+	}
+	StoreRaw(filename, raw, tx)
+	StoreResponseValues(filename, data, tx)
+	tx.Commit()
 }
 
-func StoreRaw(filename string, bytes []byte) {
+func StoreRaw(filename string, bytes []byte, tx *sql.Tx) {
 	stmt, err := db.Prepare("INSERT OR REPLACE INTO protobufs values(?, ?)");
 
 	if err != nil {
+		tx.Rollback()
                 log.Fatal("can't create statement", err)
         }
 
-	_, err = stmt.Exec(filename, bytes)
+	_, err = tx.Stmt(stmt).Exec(filename, bytes)
 
 	if err != nil {
+		tx.Rollback()
 		log.Fatal("can't insert", err)
 	}
 }
 
-func StoreResponseValues(filename string, data *pb.AnnotateImageResponse) {
-	storeLabels(filename, data)
+func StoreResponseValues(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
+	storeLabels(filename, data, tx)
 }
 
-func storeLabels(filename string, data *pb.AnnotateImageResponse) {
+func storeLabels(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	for _, label := range(data.GetLabelAnnotations()) {
-		storeLabel(label.Mid, label.Description)
-		storeImageLabel(filename, label)
+		storeLabel(label.Mid, label.Description, tx)
+		storeImageLabel(filename, label, tx)
 	}
 }
 
-func storeLabel(mid string, description string) {
+func storeLabel(mid string, description string, tx *sql.Tx) {
         stmt, err := db.Prepare("INSERT OR IGNORE INTO labels values(?, ?)");
 
         if err != nil {
+		tx.Rollback()
                 log.Fatal("can't create statement", err)
         }
 
-        _, err = stmt.Exec(mid, description)
+        _, err = tx.Stmt(stmt).Exec(mid, description)
 
         if err != nil {
+		tx.Rollback()
                 log.Fatal("can't insert", err)
         }
 }
 
-func storeImageLabel(filename string, label *pb.EntityAnnotation) {
+func storeImageLabel(filename string, label *pb.EntityAnnotation, tx *sql.Tx) {
         stmt, err := db.Prepare("INSERT OR REPLACE INTO imagelabels values(?, ?, ?)");
 
         if err != nil {
+		tx.Rollback()
                 log.Fatal("can't create statement", err)
         }
 
-        _, err = stmt.Exec(filename, label.Mid, label.Score)
+        _, err = tx.Stmt(stmt).Exec(filename, label.Mid, label.Score)
 
         if err != nil {
+		tx.Rollback()
                 log.Fatal("can't insert", err)
         }
 }
