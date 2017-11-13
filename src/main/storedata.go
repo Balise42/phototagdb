@@ -42,30 +42,28 @@ func StoreProtobuf(protopath string, filename string) {
 }
 
 func StoreAnnotations(filename string, data *pb.AnnotateImageResponse) {
-	fmt.Println(data)
-	raw, err := proto.Marshal(data)
-	if err != nil {
-		log.Fatal("can't marshal", err)
-	}
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatal("can't start transaction", err)
 	}
-	StoreRaw(filename, raw, tx)
+	StoreRaw(filename, data, tx)
 	StoreResponseValues(filename, data, tx)
 	tx.Commit()
 }
 
-func StoreRaw(filename string, bytes []byte, tx *sql.Tx) {
-	stmt, err := db.Prepare("INSERT OR REPLACE INTO protobufs values(?, ?)");
+func StoreRaw(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
+	raw, err := proto.Marshal(data)
+	if err != nil {
+		log.Fatal("can't marshal", err)
+	}
 
+	stmt, err := db.Prepare("INSERT OR REPLACE INTO protobufs values(?, ?)");
 	if err != nil {
 		tx.Rollback()
                 log.Fatal("can't create statement", err)
         }
 
-	_, err = tx.Stmt(stmt).Exec(filename, bytes)
-
+	_, err = tx.Stmt(stmt).Exec(filename, raw)
 	if err != nil {
 		tx.Rollback()
 		log.Fatal("can't insert", err)
