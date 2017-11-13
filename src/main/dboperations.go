@@ -114,6 +114,34 @@ func StoreColors(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 // Queries for a list of labels. Return the list of keys for which ALL the labels are
 // stored. Labels can be partial using "%" as a placeholder character.
 func QueryLabels(labels []string) []string {
+	query, args := buildQueryLabels(labels)
+
+	res, err := db.Query(query, args...)
+	defer res.Close()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return getFilenamesFromRes(res);
+}
+
+func getFilenamesFromRes(res *sql.Rows) []string {
+	filenames := make([]string, 0, 20)
+
+	for res.Next() {
+		var filename string
+	        err := res.Scan(&filename)
+		if err != nil {
+		        log.Fatal(err)
+		}
+	        filenames = append(filenames, filename)
+	}
+
+	return filenames
+}
+
+func buildQueryLabels(labels []string) (string, []interface{}) {
 	query := "SELECT DISTINCT filename FROM imagelabels, labels where imagelabels.mid = labels.mid and labels.description LIKE ?"
 
 	for range(labels[1:]) {
@@ -124,25 +152,18 @@ func QueryLabels(labels []string) []string {
 	for _, l := range(labels) {
 		args = append(args, l)
 	}
+	return query, args
+}
 
-	res, err := db.Query(query, args...)
+// Queries for text in pictures. Returns the list of keys of images in which the 
+// corresponding text (or a superstring of it) is present.
+func QueryText(text string) []string {
+	res, err := db.Query("SELECT DISTINCT filename FROM texts WHERE text like ?", "%"+text+"%")
 	defer res.Close()
-
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	filenames := make([]string, 0, 20)
-
-	for res.Next() {
-		var filename string
-	        err = res.Scan(&filename)
-		if err != nil {
-		        log.Fatal(err)
-		}
-	        filenames = append(filenames, filename)
-	}
-	return filenames
+	return getFilenamesFromRes(res)
 }
 
 func StoreTexts(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
