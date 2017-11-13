@@ -1,21 +1,21 @@
 package main
-import (
-	"fmt"
-	"log"
-	vision "cloud.google.com/go/vision/apiv1"
-	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
-	"golang.org/x/net/context"
-	"io/ioutil"
-	"gopkg.in/h2non/bimg.v1"
-)
 
+import (
+	vision "cloud.google.com/go/vision/apiv1"
+	"fmt"
+	"golang.org/x/net/context"
+	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	"gopkg.in/h2non/bimg.v1"
+	"io/ioutil"
+	"log"
+)
 
 func TagFiles(files []string) {
 	ctx := context.Background()
-        client, err := vision.NewImageAnnotatorClient(ctx)
-        if err != nil {
-              log.Fatalf("Failed to create client: %v", err)
-        }
+	client, err := vision.NewImageAnnotatorClient(ctx)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
 
 	InitDB()
 	defer CloseDB()
@@ -24,11 +24,11 @@ func TagFiles(files []string) {
 	numImg := 0
 	for numImg < totalImg {
 		reqs := make([]*pb.AnnotateImageRequest, 0, 16)
-		for i:= 0; i<16 && i < totalImg ; i++ {
+		for i := 0; i < 16 && numImg < totalImg; i++ {
 			reqs = append(reqs, imageToRequest(files[numImg]))
 			numImg++
 		}
-		res, err := client.BatchAnnotateImages(ctx, &pb.BatchAnnotateImagesRequest {
+		res, err := client.BatchAnnotateImages(ctx, &pb.BatchAnnotateImagesRequest{
 			Requests: reqs,
 		})
 		if err != nil {
@@ -40,20 +40,20 @@ func TagFiles(files []string) {
 }
 
 func storeResults(res *pb.BatchAnnotateImagesResponse, files []string) {
-	for i, ann := range(res.GetResponses()) {
+	for i, ann := range res.GetResponses() {
 		StoreAnnotations(files[i], ann)
 	}
 }
 
 func imageToRequest(filename string) *pb.AnnotateImageRequest {
-	req := &pb.AnnotateImageRequest {
-		Image: &pb.Image { Content: getImageBytes(filename) },
-		 Features: []*pb.Feature{
-                        {Type: pb.Feature_LANDMARK_DETECTION, MaxResults: 5},
-                        {Type: pb.Feature_LABEL_DETECTION, MaxResults: 10},
-                        {Type: pb.Feature_IMAGE_PROPERTIES},
+	req := &pb.AnnotateImageRequest{
+		Image: &pb.Image{Content: getImageBytes(filename)},
+		Features: []*pb.Feature{
+			{Type: pb.Feature_LANDMARK_DETECTION, MaxResults: 5},
+			{Type: pb.Feature_LABEL_DETECTION, MaxResults: 10},
+			{Type: pb.Feature_IMAGE_PROPERTIES},
 			{Type: pb.Feature_TEXT_DETECTION},
-                },
+		},
 	}
 	return req
 }

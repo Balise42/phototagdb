@@ -1,13 +1,13 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	_ "github.com/mattn/go-sqlite3"
+	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"io/ioutil"
 	"log"
-	"github.com/golang/protobuf/proto"
-	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
-	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
-	"fmt"
 )
 
 var (
@@ -37,17 +37,17 @@ func StoreProtobuf(protopath string, key string) {
 	}
 
 	response := &pb.AnnotateImageResponse{}
-        err = proto.Unmarshal(data, response)
+	err = proto.Unmarshal(data, response)
 	fmt.Println(response)
-        if err != nil {
-                log.Fatal("can't unmarshall", err)
-        }
+	if err != nil {
+		log.Fatal("can't unmarshall", err)
+	}
 	StoreAnnotations(key, response)
 }
 
 // Stores the annotations given in AnnotateImageResponse with the provided key (typically
 // corresponding to the photo full path). Stores both the raw data (for later processing
-// if desired) as protobuf, and the values of the attributes. 
+// if desired) as protobuf, and the values of the attributes.
 func StoreAnnotations(key string, data *pb.AnnotateImageResponse) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -65,11 +65,11 @@ func StoreRaw(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 		log.Fatal("can't marshal", err)
 	}
 
-	stmt, err := db.Prepare("INSERT OR REPLACE INTO protobufs values(?, ?)");
+	stmt, err := db.Prepare("INSERT OR REPLACE INTO protobufs values(?, ?)")
 	if err != nil {
 		tx.Rollback()
-                log.Fatal("can't create statement", err)
-        }
+		log.Fatal("can't create statement", err)
+	}
 
 	_, err = tx.Stmt(stmt).Exec(filename, raw)
 	if err != nil {
@@ -87,7 +87,7 @@ func StoreResponseValues(filename string, data *pb.AnnotateImageResponse, tx *sq
 }
 
 func StoreLabels(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
-	for _, label := range(data.GetLabelAnnotations()) {
+	for _, label := range data.GetLabelAnnotations() {
 		storeLabel(label.Mid, label.Description, tx)
 		storeImageLabel(filename, label, tx)
 	}
@@ -96,7 +96,7 @@ func StoreLabels(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 // Stores the identified landmarks. There's no difference between "landmark" and "label"
 // as far as the DB is concerned, we store everything as labels.
 func StoreLandmarks(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
-	for _, landmark := range(data.GetLandmarkAnnotations()) {
+	for _, landmark := range data.GetLandmarkAnnotations() {
 		storeLabel(landmark.Mid, landmark.Description, tx)
 		storeImageLabel(filename, landmark, tx)
 	}
@@ -106,7 +106,7 @@ func StoreLandmarks(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx)
 // store the aggregated color values.
 func StoreColors(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	colors := ComputeColors(data.GetImagePropertiesAnnotation().GetDominantColors())
-	for color, amount := range(colors) {
+	for color, amount := range colors {
 		storeColor(filename, color, amount, tx)
 	}
 }
@@ -123,7 +123,7 @@ func QueryLabels(labels []string) []string {
 		log.Fatal(err)
 	}
 
-	return getFilenamesFromRes(res);
+	return getFilenamesFromRes(res)
 }
 
 func getFilenamesFromRes(res *sql.Rows) []string {
@@ -131,11 +131,11 @@ func getFilenamesFromRes(res *sql.Rows) []string {
 
 	for res.Next() {
 		var filename string
-	        err := res.Scan(&filename)
+		err := res.Scan(&filename)
 		if err != nil {
-		        log.Fatal(err)
+			log.Fatal(err)
 		}
-	        filenames = append(filenames, filename)
+		filenames = append(filenames, filename)
 	}
 
 	return filenames
@@ -144,18 +144,18 @@ func getFilenamesFromRes(res *sql.Rows) []string {
 func buildQueryLabels(labels []string) (string, []interface{}) {
 	query := "SELECT DISTINCT filename FROM imagelabels, labels where imagelabels.mid = labels.mid and labels.description LIKE ?"
 
-	for range(labels[1:]) {
+	for range labels[1:] {
 		query = query + " INTERSECT (SELECT filename FROM imagelabels, labels where imagelabels.mid = labels.mid and labels.description LIKE ?)"
 	}
 
 	args := make([]interface{}, 0, len(labels))
-	for _, l := range(labels) {
+	for _, l := range labels {
 		args = append(args, l)
 	}
 	return query, args
 }
 
-// Queries for text in pictures. Returns the list of keys of images in which the 
+// Queries for text in pictures. Returns the list of keys of images in which the
 // corresponding text (or a superstring of it) is present.
 func QueryText(text string) []string {
 	res, err := db.Query("SELECT DISTINCT filename FROM texts WHERE text like ?", "%"+text+"%")
@@ -176,24 +176,23 @@ func QueryColor(color string, amount float64) []string {
 	return getFilenamesFromRes(res)
 }
 func StoreTexts(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
-	for _, text := range(data.GetTextAnnotations()) {
+	for _, text := range data.GetTextAnnotations() {
 		storeText(filename, text.Description, tx)
 	}
 }
 
 func storeText(filename string, text string, tx *sql.Tx) {
 	stmt, err := db.Prepare("INSERT OR IGNORE INTO texts values(?, ?)")
-        if err != nil {
-                tx.Rollback()
-                log.Fatal("can't create statement", err)
-        }
-        _, err = tx.Stmt(stmt).Exec(filename, text)
-        if err != nil {
-                tx.Rollback()
-                log.Fatal("can't insert", err)
-        }
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("can't create statement", err)
+	}
+	_, err = tx.Stmt(stmt).Exec(filename, text)
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("can't insert", err)
+	}
 }
-
 
 func storeColor(filename string, color string, amount float32, tx *sql.Tx) {
 	stmt, err := db.Prepare("INSERT OR REPLACE INTO colors values(?, ?, ?)")
@@ -209,34 +208,33 @@ func storeColor(filename string, color string, amount float32, tx *sql.Tx) {
 }
 
 func storeLabel(mid string, description string, tx *sql.Tx) {
-        stmt, err := db.Prepare("INSERT OR IGNORE INTO labels values(?, ?)");
+	stmt, err := db.Prepare("INSERT OR IGNORE INTO labels values(?, ?)")
 
-        if err != nil {
+	if err != nil {
 		tx.Rollback()
-                log.Fatal("can't create statement", err)
-        }
+		log.Fatal("can't create statement", err)
+	}
 
-        _, err = tx.Stmt(stmt).Exec(mid, description)
+	_, err = tx.Stmt(stmt).Exec(mid, description)
 
-        if err != nil {
+	if err != nil {
 		tx.Rollback()
-                log.Fatal("can't insert", err)
-        }
+		log.Fatal("can't insert", err)
+	}
 }
 
 func storeImageLabel(filename string, label *pb.EntityAnnotation, tx *sql.Tx) {
-        stmt, err := db.Prepare("INSERT OR REPLACE INTO imagelabels values(?, ?, ?)");
+	stmt, err := db.Prepare("INSERT OR REPLACE INTO imagelabels values(?, ?, ?)")
 
-        if err != nil {
+	if err != nil {
 		tx.Rollback()
-                log.Fatal("can't create statement", err)
-        }
+		log.Fatal("can't create statement", err)
+	}
 
-        _, err = tx.Stmt(stmt).Exec(filename, label.Mid, label.Score)
+	_, err = tx.Stmt(stmt).Exec(filename, label.Mid, label.Score)
 
-        if err != nil {
+	if err != nil {
 		tx.Rollback()
-                log.Fatal("can't insert", err)
-        }
+		log.Fatal("can't insert", err)
+	}
 }
-

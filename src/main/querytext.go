@@ -1,8 +1,8 @@
 package main
 
 import (
-	"os"
 	"fmt"
+	"os"
 )
 
 func main() {
@@ -10,7 +10,7 @@ func main() {
 	defer CloseDB()
 
 	res := QueryText(os.Args[1])
-	for _, filename := range(res) {
+	for _, filename := range res {
 		fmt.Println(filename)
 	}
 }
