@@ -14,14 +14,20 @@ var (
 	db *sql.DB
 )
 
-func main() {
+func InitDB() {
 	var err error
 	db, err = sql.Open("sqlite3", "../../resources/imgtag.db")
 	if err != nil {
 		log.Fatal("can't open db", err)
 	}
+}
 
-	data, err := ioutil.ReadFile("/home/isa/tmp/protobuf")
+func CloseDB() {
+	db.Close()
+}
+
+func StoreProtobuf(protopath string, filename string) {
+	data, err := ioutil.ReadFile(protopath)
 	if err != nil {
 		log.Fatal("can't read file", err)
 	}
@@ -32,11 +38,10 @@ func main() {
         if err != nil {
                 log.Fatal("can't unmarshall", err)
         }
-	Store("/home/isa/Photos/originaux/2012/2012-01-12/IMGP5425.JPG", response)
-
+	StoreAnnotations(filename, response)
 }
 
-func Store(filename string, data *pb.AnnotateImageResponse) {
+func StoreAnnotations(filename string, data *pb.AnnotateImageResponse) {
 	fmt.Println(data)
 	raw, err := proto.Marshal(data)
 	if err != nil {
