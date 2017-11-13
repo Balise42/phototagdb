@@ -25,9 +25,11 @@ A small collection of utilities to tag pictures in a directory thanks to the Goo
 * `./querycolor <color> <amount>`: returns all the images containing more than the specified amount (between 0.0 and 1.0) of a color, as stored in the database. Does not access the Google API.
 
 # TODO
-* add proper tests
+* add proper tests (okay, any tests)
 * make the DB location not hardcoded, make the DB initialization less manual
 * add more query tools (tags associated to a given picture, all the labels...)
 * make labels case insensitive (it's an issue on locations)
 * add a "recompute stored data from existing API results" to be able to modify the treatment of the raw data without accessing the API
 * the color detection can probably be improved by adding more colors to the predefined ones. could also maybe add qualifiers ("dark green" vs "light green" for instance)
+* make the query tool all-in-one, so that it can also for instance be used to search for yellow ducks
+* a visualization of the images would be very cool instead of just a list of files
