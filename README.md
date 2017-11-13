@@ -26,6 +26,7 @@ A small collection of utilities to tag pictures in a directory thanks to the Goo
 
 # TODO
 * add proper tests (okay, any tests)
+* make things better when it comes to error handling (PROBABLY it's not necessary to come to a screeching halt every time ;) )
 * make the DB location not hardcoded, make the DB initialization less manual
 * add more query tools (tags associated to a given picture, all the labels...)
 * make labels case insensitive (it's an issue on locations)
