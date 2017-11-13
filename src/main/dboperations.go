@@ -166,6 +166,15 @@ func QueryText(text string) []string {
 	return getFilenamesFromRes(res)
 }
 
+// Queries for images that have more than a certain proportion of a certain color.
+func QueryColor(color string, amount float64) []string {
+	res, err := db.Query("SELECT DISTINCT filename FROM colors WHERE color = ? and amount >= ?", color, amount)
+	defer res.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return getFilenamesFromRes(res)
+}
 func StoreTexts(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	for _, text := range(data.GetTextAnnotations()) {
 		storeText(filename, text.Description, tx)
