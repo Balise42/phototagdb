@@ -19,10 +19,10 @@ A small collection of utilities to tag pictures in a directory thanks to the Goo
 
 # How to use
 * You need a Google Cloud Vision API key - see https://cloud.google.com/vision/docs/auth - and export the GOOGLE\_APPLICATION\_CREDENTIALS variable as indicated in the documentation. NOTE: to get an API key, you need to provide billing information.
-* ./tagdirectory <directory>: tags all the JPG images of a directory. NOTE: this uploads and uses the Google API (and counts towards quotas and monthly limits for said API)
-* ./querylabel <label1> <label2>...: returns all the images references from the DB that contain all the labels given as argument. Does not access the Google API.
-* ./querytext <text>: returns all the images containing the provided text as characters in the image (as stored in the database). Does not access the Google API.
-* ./querycolor <color> <amount>: returns all the images containing more than the specified amount (between 0.0 and 1.0) of a color, as stored in the database. Does not access the Google API.
+* `./tagdirectory <directory>`: tags all the JPG images of a directory. NOTE: this uploads and uses the Google API (and counts towards quotas and monthly limits for said API)
+* `./querylabel <label1> <label2>...`: returns all the images references from the DB that contain all the labels given as argument. Does not access the Google API.
+* `./querytext <text>`: returns all the images containing the provided text as characters in the image (as stored in the database). Does not access the Google API.
+* `./querycolor <color> <amount>`: returns all the images containing more than the specified amount (between 0.0 and 1.0) of a color, as stored in the database. Does not access the Google API.
 
 # TODO
 * add proper tests
