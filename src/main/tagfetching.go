@@ -2,42 +2,24 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	vision "cloud.google.com/go/vision/apiv1"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"golang.org/x/net/context"
 	"io/ioutil"
-	"strings"
 	"gopkg.in/h2non/bimg.v1"
 )
 
-func main() {
-	path := os.Args[1]
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		log.Fatal("can't read directory", err)
-	}
 
-	toTreat := make([]string, 0, len(files))
-
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".jpg") || strings.HasSuffix(file.Name(), ".JPG") {
-			toTreat = append(toTreat, path + "/" + file.Name())
-		}
-	}
-
-	InitDB()
-	defer CloseDB()
-
-	tagFiles(toTreat)
-}
-
-func tagFiles(files []string) {
+func TagFiles(files []string) {
 	ctx := context.Background()
         client, err := vision.NewImageAnnotatorClient(ctx)
         if err != nil {
               log.Fatalf("Failed to create client: %v", err)
         }
+
+	InitDB()
+	defer CloseDB()
+
 	totalImg := len(files)
 	numImg := 0
 	for numImg < totalImg {

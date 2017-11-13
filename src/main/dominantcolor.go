@@ -4,9 +4,6 @@ import (
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"google.golang.org/genproto/googleapis/type/color"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"github.com/golang/protobuf/proto"
 	cm "github.com/jkl1337/go-chromath"
 	"github.com/jkl1337/go-chromath/deltae"
 )
@@ -15,6 +12,7 @@ var (
 	targetIlluminant = &cm.IlluminantRefD50
 	rgb2xyz = cm.NewRGBTransformer(&cm.SpaceSRGB, &cm.AdaptationBradford, targetIlluminant, &cm.Scaler8bClamping, 1.0, nil)
 	lab2xyz = cm.NewLabTransformer(targetIlluminant)
+	// table of predefined colors. Probably needs some expanding/refining.
 	PredefinedColors = map[cm.Lab]string {
 		RGBtoLab(cm.RGB{255,0,0}): "red",
 		RGBtoLab(cm.RGB{0,255,0}): "green",
@@ -47,21 +45,9 @@ var (
 	}
 )
 
-func test() {
-	data, err := ioutil.ReadFile("/home/isa/tmp/protobuf")
-        if err != nil {
-                log.Fatal("can't read file", err)
-        }
-
-        response := &pb.AnnotateImageResponse{}
-	err = proto.Unmarshal(data, response)
-
-	if err != nil {
-                log.Fatal("can't unmarshall", err)
-        }
-	fmt.Println(ComputeColors(response.GetImagePropertiesAnnotation().GetDominantColors()))
-}
-
+// Given the DominantColors of an image, transforms them into "labeled colors"
+// and aggregates everything with the same label (e.g. "red"). Returns a map of
+// color labels/proportion of the image.
 func ComputeColors(data *pb.DominantColorsAnnotation) map[string]float32 {
 	res := make(map[string]float32)
 
