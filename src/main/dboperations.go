@@ -111,6 +111,40 @@ func StoreColors(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	}
 }
 
+// Queries for a list of labels. Return the list of keys for which ALL the labels are
+// stored. Labels can be partial using "%" as a placeholder character.
+func QueryLabels(labels []string) []string {
+	query := "SELECT DISTINCT filename FROM imagelabels, labels where imagelabels.mid = labels.mid and labels.description LIKE ?"
+
+	for range(labels[1:]) {
+		query = query + " INTERSECT (SELECT filename FROM imagelabels, labels where imagelabels.mid = labels.mid and labels.description LIKE ?)"
+	}
+
+	args := make([]interface{}, 0, len(labels))
+	for _, l := range(labels) {
+		args = append(args, l)
+	}
+
+	res, err := db.Query(query, args...)
+	defer res.Close()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	filenames := make([]string, 0, 20)
+
+	for res.Next() {
+		var filename string
+	        err = res.Scan(&filename)
+		if err != nil {
+		        log.Fatal(err)
+		}
+	        filenames = append(filenames, filename)
+	}
+	return filenames
+}
+
 func StoreTexts(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	for _, text := range(data.GetTextAnnotations()) {
 		storeText(filename, text.Description, tx)
