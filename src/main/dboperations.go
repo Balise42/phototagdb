@@ -83,6 +83,7 @@ func StoreResponseValues(filename string, data *pb.AnnotateImageResponse, tx *sq
 	StoreLabels(filename, data, tx)
 	StoreLandmarks(filename, data, tx)
 	StoreColors(filename, data, tx)
+	StoreTexts(filename, data, tx)
 }
 
 func StoreLabels(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
@@ -109,6 +110,26 @@ func StoreColors(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 		storeColor(filename, color, amount, tx)
 	}
 }
+
+func StoreTexts(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
+	for _, text := range(data.GetTextAnnotations()) {
+		storeText(filename, text.Description, tx)
+	}
+}
+
+func storeText(filename string, text string, tx *sql.Tx) {
+	stmt, err := db.Prepare("INSERT OR IGNORE INTO texts values(?, ?)")
+        if err != nil {
+                tx.Rollback()
+                log.Fatal("can't create statement", err)
+        }
+        _, err = tx.Stmt(stmt).Exec(filename, text)
+        if err != nil {
+                tx.Rollback()
+                log.Fatal("can't insert", err)
+        }
+}
+
 
 func storeColor(filename string, color string, amount float32, tx *sql.Tx) {
 	stmt, err := db.Prepare("INSERT OR REPLACE INTO colors values(?, ?, ?)")

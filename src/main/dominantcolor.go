@@ -42,6 +42,15 @@ var (
 		RGBtoLab(cm.RGB{255,248,220}): "beige",
 		RGBtoLab(cm.RGB{139,69,19}): "brown",
 		RGBtoLab(cm.RGB{210,105,30}): "brown",
+		RGBtoLab(cm.RGB{70,90,110}): "blue",
+		RGBtoLab(cm.RGB{160,150,130}): "beige",
+		RGBtoLab(cm.RGB{70,80,110}): "blue",
+		RGBtoLab(cm.RGB{170,170,130}): "beige",
+		RGBtoLab(cm.RGB{130,120,80}): "khaki",
+		RGBtoLab(cm.RGB{90,80,50}): "brown",
+		RGBtoLab(cm.RGB{150,160,60}): "green",
+		RGBtoLab(cm.RGB{70,50,30}): "brown",
+		RGBtoLab(cm.RGB{115,120,60}): "green",
 	}
 )
 
@@ -71,7 +80,7 @@ func computeColorName(c *color.Color) string {
 			res = name
 		}
 	}
-	fmt.Println(c, res)
+	fmt.Println(c.Red, c.Green, c.Blue, res)
 	return res
 }
 

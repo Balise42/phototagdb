@@ -34,6 +34,7 @@ func TagFiles(files []string) {
 		if err != nil {
 			log.Fatal("Failed to annotate images", err)
 		}
+		fmt.Println(res)
 		storeResults(res, files)
 	}
 }
@@ -51,6 +52,7 @@ func imageToRequest(filename string) *pb.AnnotateImageRequest {
                         {Type: pb.Feature_LANDMARK_DETECTION, MaxResults: 5},
                         {Type: pb.Feature_LABEL_DETECTION, MaxResults: 10},
                         {Type: pb.Feature_IMAGE_PROPERTIES},
+			{Type: pb.Feature_TEXT_DETECTION},
                 },
 	}
 	return req
