@@ -181,6 +181,17 @@ func StoreTexts(filename string, data *pb.AnnotateImageResponse, tx *sql.Tx) {
 	}
 }
 
+// Queries for tags associated to a file
+func QueryImage(filename string) []string {
+	res, err := db.Query("SELECT DISTINCT labels.description FROM labels, imagelabels where imagelabels.mid = labels.mid and imagelabels.filename = ?", filename)
+	defer res.Close()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	return getFilenamesFromRes(res)
+}
+
 func storeText(filename string, text string, tx *sql.Tx) {
 	stmt, err := db.Prepare("INSERT OR IGNORE INTO texts values(?, ?)")
 	if err != nil {
