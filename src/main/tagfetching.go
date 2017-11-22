@@ -24,8 +24,10 @@ func TagFiles(files []string) {
 	numImg := 0
 	for numImg < totalImg {
 		reqs := make([]*pb.AnnotateImageRequest, 0, 16)
+		filenames := make([]string, 0, 16)
 		for i := 0; i < 16 && numImg < totalImg; i++ {
 			reqs = append(reqs, imageToRequest(files[numImg]))
+			filenames = append(filenames, files[numImg])
 			numImg++
 		}
 		res, err := client.BatchAnnotateImages(ctx, &pb.BatchAnnotateImagesRequest{
@@ -35,7 +37,7 @@ func TagFiles(files []string) {
 			log.Fatal("Failed to annotate images", err)
 		}
 		fmt.Println(res)
-		storeResults(res, files)
+		storeResults(res, filenames)
 	}
 }
 
